@@ -107,10 +107,10 @@ int main(void)
 			HAL_GPIO_WritePin(LED_GPIO_Port, LED_Pin, 0);
 			// HAL_I2S_Receive(&hmic, (uint16_t *)data, 24576, 1499);
 			// HAL_I2S_Receive_DMA(&hmic, (uint16_t *)data, 8192);
-			I2SMic_Receive((uint16_t *)data, 16384, 2000);
+			I2SMic_Receive(data, 24576, 2000);
 
 			HAL_GPIO_WritePin(LED_GPIO_Port, LED_Pin, 1);
-			HAL_I2S_Transmit(&hmax98357, (uint16_t *)data, 16384, 2000); // hal库这个size的采样数，是左右声道加起来的采样数
+			HAL_I2S_Transmit(&hmax98357, (uint16_t *)data, 24576, 2000); // hal库这个size的采样数，是左右声道加起来的采样数
 
 			// HAL_I2S_Transmit_DMA(&hmax98357, (uint16_t *)data, 8192);
 		}
