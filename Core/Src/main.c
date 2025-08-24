@@ -21,6 +21,7 @@
 #include "dma.h"
 #include "i2s.h"
 #include "spi.h"
+#include "usart.h"
 #include "gpio.h"
 
 /* Private includes ----------------------------------------------------------*/
@@ -48,7 +49,8 @@
 /* Private variables ---------------------------------------------------------*/
 
 /* USER CODE BEGIN PV */
-uint32_t data[24576] = {0};
+uint32_t data[24576] = {0}; // 16384 * 4 = 64kbyte = 1s
+
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -94,6 +96,7 @@ int main(void)
 	MX_DMA_Init();
 	MX_I2S2_Init();
 	MX_SPI3_Init();
+	MX_USART1_UART_Init();
 	/* USER CODE BEGIN 2 */
 
 	/* USER CODE END 2 */
@@ -110,6 +113,7 @@ int main(void)
 			I2SMic_Receive(data, 24576, 2000);
 
 			HAL_GPIO_WritePin(LED_GPIO_Port, LED_Pin, 1);
+			HAL_UART_Transmit_DMA(&huart1, (uint8_t *)data, 65535);
 			HAL_I2S_Transmit(&hmax98357, (uint16_t *)data, 24576, 2000); // hal库这个size的采样数，是左右声道加起来的采样数
 
 			// HAL_I2S_Transmit_DMA(&hmax98357, (uint16_t *)data, 8192);

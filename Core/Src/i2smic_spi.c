@@ -35,3 +35,19 @@ void I2SMic_Receive(uint32_t *pData, uint16_t Size, uint32_t Timeout)
 		pData[i + 1] = 0x000000; // 24 bit data in 32 bit frames
 	}
 }
+
+void I2SMic_ReceiveMonoChannel(uint32_t *pData, uint16_t Size, uint32_t Timeout)
+{
+	uint8_t temp[4] = {0};
+
+	for (int i = 0; i < Size; i++)
+	{
+		HAL_GPIO_WritePin(WSpin, 0); // left channel
+		HAL_SPI_Receive(&hmic, temp, 4, Timeout);
+		pData[i] = (temp[0] << 15) | (temp[1] << 7) | (temp[2] >> 1); // 24 bit data in 32 bit frames
+
+		HAL_GPIO_WritePin(WSpin, 1); // right channel
+		HAL_SPI_Receive(&hmic, temp, 4, Timeout);
+		// pData[i + 1] = 0x000000; // 24 bit data in 32 bit frames
+	}
+}
