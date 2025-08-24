@@ -3,8 +3,10 @@
 #include "main.h"
 
 #define hmic hspi3
+// #define hmax98357 hspi2
 #define datasize 2 // 24 bit data in 32 bit frames
 #define WSpin ICS43434_WS_GPIO_Port, ICS43434_WS_Pin
+// #define DAC_WS MAX98357_WS_GPIO_Port, MAX98357_WS_Pin
 
 /**
  * @brief  Transmit an amount of data in blocking mode
@@ -49,5 +51,25 @@ void I2SMic_ReceiveMonoChannel(uint32_t *pData, uint16_t Size, uint32_t Timeout)
 		HAL_GPIO_WritePin(WSpin, 1); // right channel
 		HAL_SPI_Receive(&hmic, temp, 4, Timeout);
 		// pData[i + 1] = 0x000000; // 24 bit data in 32 bit frames
+	}
+}
+
+void I2SDAC_TransmitMonoChannel(uint32_t *pData, uint16_t Size, uint32_t Timeout)
+{
+	uint8_t temp[4] = {0};
+	uint8_t empty[4] = {0};
+
+	for (int i = 0; i < Size; i++)
+	{
+		temp[0] = (pData[i] >> 15) & 0xFF;
+		temp[1] = (pData[i] >> 7) & 0xFF;
+		temp[2] = (pData[i] << 1) & 0xFF;
+		temp[3] = 0x00;
+
+		// HAL_GPIO_WritePin(DAC_WS, 0); // left channel
+		// HAL_SPI_Transmit(&hmax98357, temp, 4, HAL_MAX_DELAY);
+
+		// HAL_GPIO_WritePin(DAC_WS, 1); // right channel
+		// HAL_SPI_Transmit(&hmax98357, empty, 4, HAL_MAX_DELAY);
 	}
 }

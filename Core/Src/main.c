@@ -49,8 +49,8 @@
 /* Private variables ---------------------------------------------------------*/
 
 /* USER CODE BEGIN PV */
-uint32_t data[24576] = {0}; // 16384 * 4 = 64kbyte = 1s
-
+uint32_t data[8192] = {0};		  // 16384 * 4 = 64kbyte = 1s
+uint32_t dataExpand[16384] = {0}; // 存储立体声展开后的数据
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -61,7 +61,14 @@ void SystemClock_Config(void);
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
-
+void ExpandMonoToStereo(uint32_t *MonoData, uint32_t *ExpandData, uint16_t Size)
+{
+	for (int i = 0; i < Size; i++)
+	{
+		ExpandData[i * 2] = MonoData[i]; // Left channel
+		ExpandData[i * 2 + 1] = 0;		 // Right channel
+	}
+}
 /* USER CODE END 0 */
 
 /**
@@ -94,9 +101,9 @@ int main(void)
 	/* Initialize all configured peripherals */
 	MX_GPIO_Init();
 	MX_DMA_Init();
-	MX_I2S2_Init();
 	MX_SPI3_Init();
 	MX_USART1_UART_Init();
+	MX_I2S2_Init();
 	/* USER CODE BEGIN 2 */
 
 	/* USER CODE END 2 */
@@ -108,15 +115,14 @@ int main(void)
 		if (!HAL_GPIO_ReadPin(Key_GPIO_Port, Key_Pin))
 		{
 			HAL_GPIO_WritePin(LED_GPIO_Port, LED_Pin, 0);
-			// HAL_I2S_Receive(&hmic, (uint16_t *)data, 24576, 1499);
-			// HAL_I2S_Receive_DMA(&hmic, (uint16_t *)data, 8192);
-			I2SMic_Receive(data, 24576, 2000);
+			// I2SMic_Receive(data, 24576, 2000);
+			I2SMic_ReceiveMonoChannel(data, 8192, 2000);
 
 			HAL_GPIO_WritePin(LED_GPIO_Port, LED_Pin, 1);
-			HAL_UART_Transmit_DMA(&huart1, (uint8_t *)data, 65535);
-			HAL_I2S_Transmit(&hmax98357, (uint16_t *)data, 24576, 2000); // hal库这个size的采样数，是左右声道加起来的采样数
+			HAL_UART_Transmit_DMA(&huart1, (uint8_t *)data, 32768);
+			ExpandMonoToStereo(data, dataExpand, 8192);
 
-			// HAL_I2S_Transmit_DMA(&hmax98357, (uint16_t *)data, 8192);
+			HAL_I2S_Transmit(&hmax98357, (uint16_t *)dataExpand, 16384, 2000); // hal库这个size的采样数，是左右声道加起来的采样数
 		}
 		/* USER CODE END WHILE */
 
