@@ -32,6 +32,7 @@
 
 /* Private typedef -----------------------------------------------------------*/
 /* USER CODE BEGIN PTD */
+extern DMA_HandleTypeDef hdma_usart1_rx;
 
 /* USER CODE END PTD */
 
@@ -49,7 +50,7 @@
 /* Private variables ---------------------------------------------------------*/
 
 /* USER CODE BEGIN PV */
-uint32_t data[8192] = {0};		  // 16384 * 4 = 64kbyte = 1s
+uint32_t data[8192] = {0};		  // 收发数据的缓存，16384 * 4 = 64kbyte = 1s
 uint32_t dataExpand[16384] = {0}; // 存储立体声展开后的数据
 /* USER CODE END PV */
 
@@ -67,6 +68,18 @@ void ExpandMonoToStereo(uint32_t *MonoData, uint32_t *ExpandData, uint16_t Size)
 	{
 		ExpandData[i * 2] = MonoData[i]; // Left channel
 		ExpandData[i * 2 + 1] = 0;		 // Right channel
+	}
+}
+void HAL_UARTEx_RxEventCallback(UART_HandleTypeDef *huart, uint16_t Size)
+{
+	if (huart->Instance == USART1)
+	{
+		// 处理接收到的数据
+		ExpandMonoToStereo(data, dataExpand, 8192);
+
+		HAL_I2S_Transmit(&hmax98357, (uint16_t *)dataExpand, 16384, 2000);
+		HAL_UARTEx_ReceiveToIdle_DMA(&huart1, (uint8_t *)data, 32768);
+		__HAL_DMA_DISABLE_IT(&hdma_usart1_rx, DMA_IT_HT);
 	}
 }
 /* USER CODE END 0 */
@@ -105,6 +118,8 @@ int main(void)
 	MX_USART1_UART_Init();
 	MX_I2S2_Init();
 	/* USER CODE BEGIN 2 */
+	HAL_UARTEx_ReceiveToIdle_DMA(&huart1, (uint8_t *)data, 32768);
+	__HAL_DMA_DISABLE_IT(&hdma_usart1_rx, DMA_IT_HT);
 
 	/* USER CODE END 2 */
 
@@ -119,7 +134,7 @@ int main(void)
 			I2SMic_ReceiveMonoChannel(data, 8192, 2000);
 
 			HAL_GPIO_WritePin(LED_GPIO_Port, LED_Pin, 1);
-			HAL_UART_Transmit_DMA(&huart1, (uint8_t *)data, 32768);
+			HAL_UART_Transmit(&huart1, (uint8_t *)data, 32768, HAL_MAX_DELAY);
 			ExpandMonoToStereo(data, dataExpand, 8192);
 
 			HAL_I2S_Transmit(&hmax98357, (uint16_t *)dataExpand, 16384, 2000); // hal库这个size的采样数，是左右声道加起来的采样数
